@@ -1,0 +1,89 @@
+#importing the appropriate catalogs and functions
+%matplotlib inline
+import numpy as np
+from pylab import plot, show, ylabel, xlabel, axis, legend, xlim, ylim, errorbar, title, savefig
+import matplotlib.pyplot as plt
+from astropy import units as u
+import astropy.coordinates as coord
+from astropy.coordinates import SkyCoord
+from astropy.coordinates import Distance, Angle, Latitude, Longitude
+from astropy.coordinates import Galactic, ICRS, FK4, FK5
+from astropy.time import Time
+import pandas as pd
+from mining_functions import angsep_anderror_withPM
+from scipy.stats import kde
+from dustmaps.bayestar import BayestarQuery
+
+def angsep_error_noPM(PSRra, PSRdec, opt_ra, opt_ra_err, opt_dec, opt_dec_err):
+    ''' NEED TO KNOW:
+    1. RA, Dec or l,b  must be in degrees
+    2. errors must be in seconds
+    
+    Returns the two lists: angsep_arc_mean and angsep_std
+    
+    '''
+    #initiating single variables and converting to radians
+    x=opt_dec*(np.pi/180.0)
+    a=opt_ra*(np.pi/180.0)
+    y=PSRdec*(np.pi/180.0)
+    b=PSRra*(np.pi/180.0)
+    #converting error in seconds to degrees
+    opt_ra_err=opt_ra_err/3600.
+    opt_dec_err=opt_dec_err/3600.
+    partial_wrt_x=(np.cos(b-a)*np.cos(y)*np.sin(x)-np.sin(y)*np.cos(x))/np.sqrt(1.0-(np.sin(y)*np.sin(x)+np.cos(b-a)*np.cos(y)*np.cos(x))**2)
+    partial_wrt_a=(np.cos(x)*np.cos(y)*np.sin(a-b))/np.sqrt(1-(np.cos(x)*np.cos(y)*np.cos(a-b)+np.sin(x)*np.sin(y))**2)
+    #converting back to degrees
+    partial_wrt_x=partial_wrt_x*(180./np.pi)
+    partial_wrt_a=partial_wrt_a*(180./np.pi)
+    sigma=np.sqrt((partial_wrt_x**2*opt_dec_err**2)+(partial_wrt_a**2*opt_ra_err**2))
+    return sigma
+    
+    def angsep_anderror_withPM_individual(psr_l,psr_b,psr_pml,psr_pmb,psr_pmlerr,psr_pmberr, psr_dist, tPSR, 
+                           tobj, raobj, decobj, raobjerr, decobjerr):
+    ''' NEED TO KNOW:
+    1. RA, Dec or l,b  must be in degrees
+    2. errors must be in seconds
+    3. distance must be in parsecs
+    4. pml and pmb must be in mas/yr
+    5. tPSR and tobj must have been formatted with Time() before calling this function
+    6. angsep_arc_mean and angsep_std lists need to be initialized before calling
+    
+    Returns the two lists: angsep_arc_mean and angsep_std
+    
+    '''
+    
+    
+    mu_pml,sigma_pml=psr_pml,psr_pmlerr
+    pml_wpsrPM=np.random.normal(mu_pml,sigma_pml,1000)
+    mu_pmb,sigma_pmb=psr_pmb,psr_pmberr
+    pmb_wpsrPM=np.random.normal(mu_pmb,sigma_pmb,1000)
+
+
+    c=SkyCoord(frame='galactic',l=psr_l*np.ones(1000)*u.degree, b=psr_b*np.ones(1000)*u.degree, distance=psr_dist*u.parsec, pm_l_cosb=pml_wpsrPM*u.mas/u.yr, pm_b=pmb_wpsrPM*u.mas/u.yr, obstime=tPSR.iso)
+    c.apply_space_motion(new_obstime=Time(tobj.iso)) 
+    c=SkyCoord(ra=c.icrs.ra.value*u.deg, dec=c.icrs.dec.value*u.deg, frame='icrs')
+    
+
+    mu_ra,sigma_ra=raobj, raobjerr/3600
+    ra_obj=np.random.normal(mu_ra,sigma_ra,1000)
+    mu_dec,sigma_dec=decobj, decobjerr/3600
+    dec_obj=np.random.normal(mu_dec,sigma_dec,1000)
+    c2=SkyCoord(ra=ra_obj, dec=dec_obj, frame='icrs', unit=(u.deg, u.deg))
+    
+    angsep=c.separation(c2)
+    angsep_arcsec=angsep.degree*3600
+    angsep_arc_mean=(np.mean(angsep_arcsec))
+    angsep_std=np.std(angsep_arcsec)
+    return angsep_arc_mean, angsep_std
+    
+    
+    '''Below is how the FAP was calculated.  
+    
+    In order to calculate the FAP you need to define the area. In this code bottom is the area of one degree.  You also need 
+    the angular separations between the object and the MSP and the number of stars within a one degree field. '''
+    
+bottom=np.pi*3600**2 #creating an area of one degree in arcsec
+FAP_firstcut=[]
+for i in range(len(angularseparations)):
+    fap=(numstars[i]*np.pi*(angularseparations[i]**2))/bottom
+    FAP_firstcut.append(fap)
