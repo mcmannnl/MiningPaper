@@ -77,7 +77,101 @@ def angsep_error_noPM(PSRra, PSRdec, opt_ra, opt_ra_err, opt_dec, opt_dec_err):
     return angsep_arc_mean, angsep_std
     
     
-    '''Below is how the FAP was calculated.  
+def testingpm(psrname,psr_l,psr_b, dist1kpc,tPSR, tobj, raobj, decobj, raobjerr, decobjerr):
+    test1=((0.0<dist1kpc)&(dist1kpc<=1.0))
+    test2=((1.0<dist1kpc)&(dist1kpc<=2.0))
+    test3=((2.0<dist1kpc)&(dist1kpc<=3.0))
+    test4=((3.0<dist1kpc))
+    psr_dist=dist1kpc*1000.0
+    print(len(psr_dist))
+    for i in range(len(psrname)):
+        if test1[i]==True:
+            mu_pml,sigma_pml=-0.2313,5.0776
+            pml_wpsrPM=np.random.normal(mu_pml,sigma_pml,1000)
+            mu_pmb,sigma_pmb=1.235,4.6517
+            pmb_wpsrPM=np.random.normal(mu_pmb,sigma_pmb,1000)
+
+
+            c=SkyCoord(frame='galactic',l=psr_l[i]*np.ones(1000)*u.degree, b=psr_b[i]*np.ones(1000)*u.degree, distance=psr_dist[i]*u.parsec, pm_l_cosb=pml_wpsrPM*u.deg/u.yr, pm_b=pmb_wpsrPM*u.deg/u.yr, obstime=tPSR[i].iso)
+            c.apply_space_motion(new_obstime=Time(tobj[i].iso)) 
+            c=SkyCoord(ra=c.icrs.ra.value*u.deg, dec=c.icrs.dec.value*u.deg, frame='icrs')
+    
+
+            mu_ra,sigma_ra=raobj[i], raobjerr[i]/3600
+            ra_obj=np.random.normal(mu_ra,sigma_ra,1000)
+            mu_dec,sigma_dec=decobj[i], decobjerr[i]/3600
+            dec_obj=np.random.normal(mu_dec,sigma_dec,1000)
+            c2=SkyCoord(ra=ra_obj, dec=dec_obj, frame='icrs', unit=(u.deg, u.deg))
+    
+            angsep=c.separation(c2)
+            angsep_arcsec=angsep.degree*3600
+            angsep_arc_mean.append(np.mean(angsep_arcsec))
+            angsep_std.append(np.std(angsep_arcsec))
+        elif test2[i]==True:
+            mu_pml,sigma_pml=3.5084,3.1772
+            pml_wpsrPM=np.random.normal(mu_pml,sigma_pml,1000)
+            mu_pmb,sigma_pmb=1.4611,2.9004
+            pmb_wpsrPM=np.random.normal(mu_pmb,sigma_pmb,1000)
+
+
+            c=SkyCoord(frame='galactic',l=psr_l[i]*np.ones(1000)*u.degree, b=psr_b[i]*np.ones(1000)*u.degree, distance=psr_dist[i]*u.parsec, pm_l_cosb=pml_wpsrPM*u.deg/u.yr, pm_b=pmb_wpsrPM*u.deg/u.yr, obstime=tPSR[i].iso)
+            c.apply_space_motion(new_obstime=Time(tobj[i].iso)) 
+            c=SkyCoord(ra=c.icrs.ra.value*u.deg, dec=c.icrs.dec.value*u.deg, frame='icrs')
+    
+
+            mu_ra,sigma_ra=raobj[i], raobjerr[i]/3600
+            ra_obj=np.random.normal(mu_ra,sigma_ra,1000)
+            mu_dec,sigma_dec=decobj[i], decobjerr[i]/3600
+            dec_obj=np.random.normal(mu_dec,sigma_dec,1000)
+            c2=SkyCoord(ra=ra_obj, dec=dec_obj, frame='icrs', unit=(u.deg, u.deg))
+    
+            angsep=c.separation(c2)
+            angsep_arcsec=angsep.degree*3600
+            angsep_arc_mean.append(np.mean(angsep_arcsec))
+            angsep_std.append(np.std(angsep_arcsec))
+            
+        elif test3[i]==True:
+            mu_pml,sigma_pml=2.8112,3.9367
+            pml_wpsrPM=np.random.normal(mu_pml,sigma_pml,1000)
+            mu_pmb,sigma_pmb=-0.0573,2.19
+            pmb_wpsrPM=np.random.normal(mu_pmb,sigma_pmb,1000)
+
+
+            c=SkyCoord(frame='galactic',l=psr_l[i]*np.ones(1000)*u.degree, b=psr_b[i]*np.ones(1000)*u.degree, distance=psr_dist[i]*u.parsec, pm_l_cosb=pml_wpsrPM*u.deg/u.yr, pm_b=pmb_wpsrPM*u.deg/u.yr, obstime=tPSR[i].iso)
+            c.apply_space_motion(new_obstime=Time(tobj[i].iso)) 
+            c=SkyCoord(ra=c.icrs.ra.value*u.deg, dec=c.icrs.dec.value*u.deg, frame='icrs')
+    
+
+            mu_ra,sigma_ra=raobj[i], raobjerr[i]/3600
+            ra_obj=np.random.normal(mu_ra,sigma_ra,1000)
+            mu_dec,sigma_dec=decobj[i], decobjerr[i]/3600
+            dec_obj=np.random.normal(mu_dec,sigma_dec,1000)
+            c2=SkyCoord(ra=ra_obj, dec=dec_obj, frame='icrs', unit=(u.deg, u.deg))
+    
+            angsep=c.separation(c2)
+            angsep_arcsec=angsep.degree*3600
+            angsep_arc_mean.append(np.mean(angsep_arcsec))
+            angsep_std.append(np.std(angsep_arcsec))
+            
+        elif test4[i]==True:
+            mu_pml,sigma_pml=10.8809,5.6803
+            pml_wpsrPM=np.random.normal(mu_pml,sigma_pml,1000)
+            mu_pmb,sigma_pmb=-2.6341,5.27
+            pmb_wpsrPM=np.random.normal(mu_pmb,sigma_pmb,1000)
+            c=SkyCoord(frame='galactic',l=psr_l[i]*np.ones(1000)*u.degree, b=psr_b[i]*np.ones(1000)*u.degree, distance=psr_dist[i]*u.parsec, pm_l_cosb=pml_wpsrPM*u.deg/u.yr, pm_b=pmb_wpsrPM*u.deg/u.yr, obstime=tPSR[i].iso)
+            c.apply_space_motion(new_obstime=Time(tobj[i].iso)) 
+            c=SkyCoord(ra=c.icrs.ra.value*u.deg, dec=c.icrs.dec.value*u.deg, frame='icrs')
+            mu_ra,sigma_ra=raobj[i], raobjerr[i]/3600
+            ra_obj=np.random.normal(mu_ra,sigma_ra,1000)
+            mu_dec,sigma_dec=decobj[i], decobjerr[i]/3600
+            dec_obj=np.random.normal(mu_dec,sigma_dec,1000)
+            c2=SkyCoord(ra=ra_obj, dec=dec_obj, frame='icrs', unit=(u.deg, u.deg)
+            angsep=c.separation(c2)
+            angsep_arcsec=angsep.degree*3600
+            angsep_arc_mean.append(np.mean(angsep_arcsec))
+            angsep_std.append(np.std(angsep_arcsec))
+    
+'''Below is how the FAP was calculated.  
     
     In order to calculate the FAP you need to define the area. In this code bottom is the area of one degree.  You also need 
     the angular separations between the object and the MSP and the number of stars within a one degree field. '''
